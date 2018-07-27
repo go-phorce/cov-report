@@ -6,4 +6,4 @@ excluded:
 result:    46.7%
 
 Top uncovered source files [name, uncovered count, total uncovered %]
- git.soma.salesforce.com/StateScrum/coverage-reporter/coverage.go     98   53.3%
+ github.com/ekspand/cov-report/coverage.go     98   53.3%

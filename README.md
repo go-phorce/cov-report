@@ -1,4 +1,4 @@
-# cov-reporter
+# cov-report
 
 _Generates aggregate go code coverage results._
 
@@ -20,29 +20,22 @@ You'll also need the dependency from golang.org/x/tools/cover [or the internal m
 
 ## Usage
 
-`cov-reporter [-fmt txt|json|xml] [-o results.file] [-u <num top uncovered files>] [-ex source file name exclusion regex] [-cc combined output filename] <coverprofileFile> ...`
+`cov-report [-fmt txt|json|xml] [-o results.file] [-u <num top uncovered files>] [-ex source file name exclusion regex] [-cc combined output filename] <coverprofileFile> ...`
 
 e.g.
 
 ```.sh
-./cov-reporter -ex "query_console|.*.pb.go" ~/code/graphr/cpt.out ~/code/graphr/cp.out
+./cov-report -ex "query_console|.*.pb.go" ~/code/ekspand/cov-report/cpt.out ~/code/ekspand/cov-report/cp.out
 Statements
-total:     2069
-covered:   1856
-uncovered: 213
-excluded:  
+total:     203
+covered:   182
+uncovered: 21
+excluded:
 result:    89.7%
 
 Top uncovered source files [name, uncovered count, total uncovered %]
- salesforce.com/graphr/graphr.go                       92    4.4%
- salesforce.com/graphr/graph/graph.go                  40    1.9%
- salesforce.com/graphr/http/http.go                    15    0.7%
- salesforce.com/graphr/raft/transport/transport.go     15    0.7%
- salesforce.com/graphr/http/http_local.go              13    0.6%
- salesforce.com/graphr/graph/fsmversion.go             11    0.5%
- salesforce.com/graphr/graph/fsm.go                     9    0.4%
- salesforce.com/graphr/graphrctl/ctl.go                 4    0.2%
- salesforce.com/graphr/config/c.go                      4    0.2%
- salesforce.com/graphr/config/config.go                 3    0.1%
+ github.com/ekspand/cov-report/cmd/cov-report/main.go     19    9.4%
+ github.com/ekspand/cov-report/version/versioninfo.go      1    0.5%
+ github.com/ekspand/cov-report/version/current.go          1    0.5%
 
 ```

@@ -27,9 +27,6 @@ PROJ_REPO_TARGET := "${PROJ_GOPATH_DIR}/src/${REPO_NAME}"
 VENDOR_SRC=vendor
 DOCKER_BIN=.docker
 
-# project directory
-export PROJ_DIR := ${PROJ_GOPATH}/src/${REPO_NAME}
-
 # tools path
 export TOOLS_PATH := ${PROJ_GOPATH}/src/${REPO_NAME}/${VENDOR_SRC}/.tools
 export TOOLS_SRC := ${TOOLS_PATH}/src
@@ -64,6 +61,7 @@ vars:
 	echo "PROJROOT=$(PROJROOT)"
 	echo "GOROOT=$(GOROOT)"
 	echo "GOPATH=$(GOPATH)"
+	echo "VENDOR_SRC=$(VENDOR_SRC)"
 	echo "PROJ_PACKAGE=$(PROJ_PACKAGE)"
 	echo "PROJ_GOPATH=$(PROJ_GOPATH)"
 	echo "TOOLS_PATH=$(TOOLS_PATH)"
@@ -81,8 +79,8 @@ jenkinsint: purge gopath vendor tools generate build citestint
 clean:
 	go clean
 	rm -rf \
-		${COVPATH}
-		bin \
+		${COVPATH} \
+		bin
 
 purge: clean
 	rm -rf \
@@ -93,7 +91,7 @@ gopath:
 	@[ ! -d $(PROJ_REPO_TARGET) ] && \
 		rm -f "${PROJ_REPO_TARGET}" && \
 		mkdir -p "${PROJ_GOPATH_DIR}/src/${ORG_NAME}" && \
-		ln -s ../../.. "${PROJ_REPO_TARGET}" && \
+		ln -s ../../../.. "${PROJ_REPO_TARGET}" && \
 		echo "Created link: ${PROJ_REPO_TARGET}" || \
 	echo "Link already exists: ${PROJ_REPO_TARGET}"
 
@@ -103,10 +101,10 @@ showupdates:
 
 gettools:
 	mkdir -p ${TOOLS_SRC}
-	$(call gitclone,${GHE_HOST},golang.org/x/tools,                  ${TOOLS_SRC}/golang.org/x/tools,                  2226533658007779ffd629b495a088530c84dc50)
-	$(call gitclone,${GHE_HOST},github.com/golang/lint,              ${TOOLS_SRC}/github.com/golang/lint,              3ea3fa98a8104b2c8f8a7bffaebc7e54dddf99e1)
-	$(call gitclone,${GHE_HOST},github.com/jteeuwen/go-bindata,      ${TOOLS_SRC}/github.com/jteeuwen/go-bindata,      v3.0.7)
-	$(call gitclone,${GHE_HOST},github.com/jstemmer/go-junit-report, ${TOOLS_SRC}/github.com/jstemmer/go-junit-report, da7ae240fbfd2c0d052da170fa8312d90822dc10)
+	$(call gitclone,${GITHUB_HOST},golang/tools,             ${TOOLS_SRC}/golang.org/x/tools,                  2226533658007779ffd629b495a088530c84dc50)
+	$(call gitclone,${GITHUB_HOST},golang/lint,              ${TOOLS_SRC}/github.com/golang/lint,              3ea3fa98a8104b2c8f8a7bffaebc7e54dddf99e1)
+	$(call gitclone,${GITHUB_HOST},jteeuwen/go-bindata,      ${TOOLS_SRC}/github.com/jteeuwen/go-bindata,      v3.0.7)
+	$(call gitclone,${GITHUB_HOST},jstemmer/go-junit-report, ${TOOLS_SRC}/github.com/jstemmer/go-junit-report, 385fac0ced9acaae6dc5b39144194008ded00697)
 
 tools: gettools
 	GOPATH=${TOOLS_PATH} go install golang.org/x/tools/cmd/stringer
@@ -119,7 +117,6 @@ tools: gettools
 
 getdevtools:
 	$(call gitclone,${GITHUB_HOST},golang/tools,                ${GOPATH}/src/golang.org/x/tools,                  master)
-	$(call gitclone,${GITHUB_HOST},MichaelTJones/walk,          ${GOPATH}/src/github.com/MichaelTJones/walk,       master)
 	$(call gitclone,${GITHUB_HOST},derekparker/delve,           ${GOPATH}/src/github.com/derekparker/delve,        master)
 	$(call gitclone,${GITHUB_HOST},uudashr/gopkgs,              ${GOPATH}/src/github.com/uudashr/gopkgs,           master)
 	$(call gitclone,${GITHUB_HOST},nsf/gocode,                  ${GOPATH}/src/github.com/nsf/gocode,               master)
@@ -128,10 +125,7 @@ getdevtools:
 	$(call gitclone,${GITHUB_HOST},ramya-rao-a/go-outline,      ${GOPATH}/src/github.com/ramya-rao-a/go-outline,   master)
 	$(call gitclone,${GITHUB_HOST},ddollar/foreman,             ${GOPATH}/src/github.com/ddollar/foreman,          master)
 	$(call gitclone,${GITHUB_HOST},sqs/goreturns,               ${GOPATH}/src/github.com/sqs/goreturns,            master)
-	$(call gitclone,${GITHUB_HOST},go-yaml/yaml,                ${GOPATH}/src/gopkg.in/yaml.v2,                    31c299268d302dd0aa9a0dcf765a3d58971ac83f)
-	$(call gitclone,${GITHUB_HOST},joho/godotenv,               ${GOPATH}/src/github.com/joho/godotenv,            v1.2.0)
-	$(call gitclone,${GITHUB_HOST},daviddengcn/go-colortext,    ${GOPATH}/src/github.com/daviddengcn/go-colortext, 1.0.0)
-	$(call gitclone,${GITHUB_HOST},mattn/goreman,               ${GOPATH}/src/github.com/mattn/goreman,            d4c5582ffcd7d9dae49866527c7c250b04561d7e)
+	$(call gitclone,${GITHUB_HOST},pkg/errors,                  ${GOPATH}/src/github.com/pkg/errors,               master)
 
 devtools: getdevtools
 	go install golang.org/x/tools/cmd/fiximports
@@ -145,15 +139,15 @@ devtools: getdevtools
 	go install github.com/sqs/goreturns
 
 get:
-	$(call gitclone,${GHE_HOST},gopkg.in/alecthomas/kingpin.v2, ${VENDOR_SRC}/gopkg.in/alecthomas/kingpin.v2, 7f0871f2e17818990e4eed73f9b5c2f429501228)
-	$(call gitclone,${GHE_HOST},github.com/alecthomas/template, ${VENDOR_SRC}/github.com/alecthomas/template, a0175ee3bccc567396460bf5acd36800cb10c49c)
-	$(call gitclone,${GHE_HOST},github.com/alecthomas/units,    ${VENDOR_SRC}/github.com/alecthomas/units,    2efee857e7cfd4f3d0138cc3cbb1b4966962b93a)
-	$(call gitclone,${GHE_HOST},github.com/stretchr/testify,    ${VENDOR_SRC}/github.com/stretchr/testify,    4d4bfba8f1d1027c4fdbe371823030df51419987)
-	$(call gitclone,${GHE_HOST},github.com/ugorji/go,           ${VENDOR_SRC}/github.com/ugorji/go,           5cd0f2b3b6cca8e3a0a4101821e41a73cb59bed6)
-	$(call gitclone,${GHE_HOST},golang.org/x/crypto,            ${VENDOR_SRC}/golang.org/x/crypto,            453249f01cfeb54c3d549ddb75ff152ca243f9d8)
-	$(call gitclone,${GHE_HOST},golang.org/x/net,               ${VENDOR_SRC}/golang.org/x/net,               66aacef3dd8a676686c7ae3716979581e8b03c47)
-	$(call gitclone,${GHE_HOST},golang.org/x/text,              ${VENDOR_SRC}/golang.org/x/text,              b19bf474d317b857955b12035d2c5acb57ce8b01)
-	$(call gitclone,${GHE_HOST},etcd-mirrors/juju-errors,       ${VENDOR_SRC}/github.com/juju/errors,         c7d06af17c68cd34c835053720b21f6549d9b0ee)
+	$(call gitclone,${GITHUB_HOST},alecthomas/kingpin,    ${VENDOR_SRC}/gopkg.in/alecthomas/kingpin,    a39589180ebd6bbf43076e514b55f20a95d43086)
+	$(call gitclone,${GITHUB_HOST},alecthomas/template,   ${VENDOR_SRC}/github.com/alecthomas/template, a0175ee3bccc567396460bf5acd36800cb10c49c)
+	$(call gitclone,${GITHUB_HOST},alecthomas/units,      ${VENDOR_SRC}/github.com/alecthomas/units,    2efee857e7cfd4f3d0138cc3cbb1b4966962b93a)
+	$(call gitclone,${GITHUB_HOST},stretchr/testify,      ${VENDOR_SRC}/github.com/stretchr/testify,    4d4bfba8f1d1027c4fdbe371823030df51419987)
+	$(call gitclone,${GITHUB_HOST},ugorji/go,             ${VENDOR_SRC}/github.com/ugorji/go,           5cd0f2b3b6cca8e3a0a4101821e41a73cb59bed6)
+	$(call gitclone,${GITHUB_HOST},golang/crypto,         ${VENDOR_SRC}/golang.org/x/crypto,            453249f01cfeb54c3d549ddb75ff152ca243f9d8)
+	$(call gitclone,${GITHUB_HOST},golang/net,            ${VENDOR_SRC}/golang.org/x/net,               66aacef3dd8a676686c7ae3716979581e8b03c47)
+	$(call gitclone,${GITHUB_HOST},golang/text,           ${VENDOR_SRC}/golang.org/x/text,              b19bf474d317b857955b12035d2c5acb57ce8b01)
+	$(call gitclone,${GITHUB_HOST},juju/errors,           ${VENDOR_SRC}/github.com/juju/errors,         c7d06af17c68cd34c835053720b21f6549d9b0ee)
 
 vendor: get
 
@@ -166,6 +160,7 @@ version:
 build:
 	echo "Building ${PROJ_NAME}"
 	cd ${TEST_DIR} && go build -o ${PROJROOT}/bin/${PROJ_NAME} ./cmd/${PROJ_NAME}
+	cp ${PROJROOT}/bin/${PROJ_NAME} ${TOOLS_BIN}/
 
 listpkg: vars
 	cd ${TEST_DIR} && go list ./...

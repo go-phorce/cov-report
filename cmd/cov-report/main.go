@@ -22,9 +22,9 @@ func realMain(outw io.WriteCloser, args []string) int {
 	flags.SetOutput(outw)
 	exc := flags.String("ex", "", "A regex to exclude files from the calculation [file names that match the regex are excluded]")
 	format := flags.String("fmt", "txt", fmt.Sprintf("What format do you want the results in (%v)", strings.Join(keys(formatters), ", ")))
-	out := flags.String("o", "", "filename to write the results to (or stdout if not set)")
-	cc := flags.String("cc", "", "filename to write the combined coverage details to")
-	uncovered := flags.Int("u", 10, "number of top uncovered files to list")
+	out := flags.String("o", "", "Filename to write the results to (or stdout if not set)")
+	cc := flags.String("cc", "", "Filename to write the combined coverage details to")
+	uncovered := flags.Int("u", 10, "Number of top uncovered files to list")
 
 	if err := flags.Parse(args[1:]); err != nil {
 		fmt.Fprintf(outw, "%s: %s", args[0], err)

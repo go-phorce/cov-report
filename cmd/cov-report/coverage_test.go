@@ -64,7 +64,7 @@ func Test_MainBadFlags(t *testing.T) {
 }
 
 func verifyMain(t *testing.T, expResultCode int, args ...string) {
-	fullArgs := append([]string{"coverage-reporter"}, args...)
+	fullArgs := append([]string{"cov-report"}, args...)
 	out := bytes.Buffer{}
 	res := realMain(&nopWriteCloser{&out}, fullArgs)
 	assert.Equal(t, expResultCode, res)

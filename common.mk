@@ -13,7 +13,7 @@ LATEST_TAG := $(shell git describe --tags --abbrev=0)
 COMMITS_SINCE_TAG := $(shell git rev-list "${LATEST_TAG}"... | wc -l)# number of commits since latest tag
 COMMITS_COUNT := $(shell git rev-list --count master)# number of commits in master
 RPM_ITERATION := $(shell git rev-list HEAD | wc -l)# number of commits in repo
-RPM_VERSION  := $(shell printf %s.%d ${LATEST_TAG} ${COMMITS_SINCE_TAG})#newest version # tag
+RPM_VERSION  := $(shell printf %s-%d ${LATEST_TAG} ${COMMITS_SINCE_TAG})#newest version # tag
 GIT_VERSION := ${RPM_VERSION}-${COMMITS_COUNT}${GIT_DIRTY}
 COVPATH=.coverage
 
@@ -40,7 +40,7 @@ endef
 define gitclone
 	@echo "Checking/Updating dependency git@$(1):$(2).git"
 	@if [ -d $(3) ]; then cd $(3) && git fetch origin; fi			# update from remote if we've already cloned it
-	@if [ ! -d $(3) ]; then git clone -q -n git@$(1):$(2).git $(3); fi	# clone a new copy
+	@if [ ! -d $(3) ]; then git clone -q -n git@$(1):$(2).git $(3); fi  # clone a new copy
 	@cd $(3) && git checkout -q $(4)								# checkout out specific commit
 	@sleep ${CLONE_DELAY}
 endef
@@ -85,7 +85,7 @@ define go_test_cover
 		; done \
 		&& echo "Completed with status code $$exitCode" \
 		&& if [ $$exitCode -ne "0" ] ; then echo "Test failed, exit code: $$exitCode" && exit $$exitCode ; fi )
-	${TOOLS_BIN}/˙ -ex $(6) -cc ${COVPATH}/combined.out ${COVPATH}/cc*.out
+	${TOOLS_BIN}/cov-report -ex $(6) -cc ${COVPATH}/combined.out ${COVPATH}/cc*.out
 endef
 
 # same as go_test_cover except it also generates results in the junit format

@@ -13,7 +13,7 @@ if [[ "$PWD" = *src/$REPO_NAME ]]; then
 #
 # Already in GOPATH format
 #
-pushd ../../..
+pushd ../../../..
 CWD=`pwd`
 PROJ_GOPATH_DIR=$CWD
 PROJ_PACKAGE=$REPO_NAME
@@ -43,7 +43,7 @@ echo "PROJ_GOPATH=$PROJ_GOPATH"
 
 [ -d "$PROJ_GOPATH_DIR/src/$REPO_NAME" ] && rm -f "$PROJ_GOPATH_DIR/src/$REPO_NAME"
 mkdir -p "$PROJ_GOPATH_DIR/src/$ORG_NAME"
-ln -s ../../../$PROJ_NAME "$PROJ_GOPATH_DIR/src/$REPO_NAME"
+ln -s ../../../../$PROJ_NAME "$PROJ_GOPATH_DIR/src/$REPO_NAME"
 
 export PROJROOT=$ROOT
 export PROJ_GOPATH_DIR="../$PROJ_GOPATH_DIR"
