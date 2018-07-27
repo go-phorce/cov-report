@@ -1,0 +1,12 @@
+{
+    "total":        1234,
+    "covered":      1053,
+    "uncovered":    181,
+    "excluded":     5,
+    "excludedSources" : ["codegenc.go"],
+    "result":           85.33,
+    "resultFormatted" : "85.33%",
+    "topUncoveredFiles": [
+        {"filename":"bob.go", "total":100, "covered":10, "uncovered":90, "coveredPercent":10}
+    ]
+}

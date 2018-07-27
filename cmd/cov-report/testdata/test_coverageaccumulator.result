@@ -1,0 +1,11 @@
+{
+    "total":        184,
+    "covered":      86,
+    "uncovered":    98,
+    "excluded":     0,
+    "result":           46.739132,
+    "resultFormatted" : "46.7%",
+    "topUncoveredFiles": [
+            {"filename":"git.soma.salesforce.com/StateScrum/coverage-reporter/coverage.go", "total":122, "covered":24, "uncovered":98, "coveredPercent":19.67213}
+    ]
+}

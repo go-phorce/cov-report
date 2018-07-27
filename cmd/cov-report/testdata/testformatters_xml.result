@@ -1,0 +1,16 @@
+<CoverageResult>
+  <Total>1234</Total>
+  <Covered>1053</Covered>
+  <Uncovered>181</Uncovered>
+  <Excluded>5</Excluded>
+  <ExcludedSources>codegenc.go</ExcludedSources>
+  <Result>85.33</Result>
+  <ResultFormatted>85.33%</ResultFormatted>
+  <TopUncovered>
+    <Filename>bob.go</Filename>
+    <Total>100</Total>
+    <Covered>10</Covered>
+    <Uncovered>90</Uncovered>
+    <CoveredPct>10</CoveredPct>
+  </TopUncovered>
+</CoverageResult>
