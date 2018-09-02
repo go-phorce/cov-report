@@ -2,15 +2,12 @@
 /.coverage
 /.rpm
 /vendor
-
-pkg/
 bin/
+
 .idea
 .tmp/
+.docker/
+.DS_Store
 
 debug
 debug.test
-
-.docker/
-
-.DS_Store

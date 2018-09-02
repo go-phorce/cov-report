@@ -6,6 +6,6 @@
     "result":           46.739132,
     "resultFormatted" : "46.7%",
     "topUncoveredFiles": [
-            {"filename":"github.com/ekspand/cov-report/coverage.go", "total":122, "covered":24, "uncovered":98, "coveredPercent":19.67213}
+            {"filename":"github.com/go-phorce/cov-report/coverage.go", "total":122, "covered":24, "uncovered":98, "coveredPercent":19.67213}
     ]
 }

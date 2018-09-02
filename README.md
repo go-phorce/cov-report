@@ -34,8 +34,8 @@ excluded:
 result:    89.7%
 
 Top uncovered source files [name, uncovered count, total uncovered %]
- github.com/ekspand/cov-report/cmd/cov-report/main.go     19    9.4%
- github.com/ekspand/cov-report/version/versioninfo.go      1    0.5%
- github.com/ekspand/cov-report/version/current.go          1    0.5%
+ github.com/go-phorce/cov-report/cmd/cov-report/main.go     19    9.4%
+ github.com/go-phorce/cov-report/version/versioninfo.go      1    0.5%
+ github.com/go-phorce/cov-report/version/current.go          1    0.5%
 
 ```
