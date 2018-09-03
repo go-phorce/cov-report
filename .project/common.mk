@@ -16,11 +16,9 @@ GOLANG_HOST := golang.org
 GIT_DIRTY := $(shell git describe --dirty --always --tags --long | grep -q -e '-dirty' && echo -$$HOSTNAME)
 GIT_HASH := $(shell git rev-parse --short HEAD)
 LATEST_TAG := $(shell git describe --tags --abbrev=0)
-COMMITS_SINCE_TAG := $(shell git rev-list "${LATEST_TAG}"... | wc -l)# number of commits since latest tag
-COMMITS_COUNT := $(shell git rev-list --count master)# number of commits in master
-RPM_ITERATION := $(shell git rev-list HEAD | wc -l)# number of commits in repo
-RPM_VERSION  := $(shell printf %s-%d ${LATEST_TAG} ${COMMITS_SINCE_TAG})#newest version # tag
-GIT_VERSION := ${RPM_VERSION}-${COMMITS_COUNT}${GIT_DIRTY}
+COMMITS_COUNT := $(shell git rev-list --count ${GIT_HASH})# number of commits in master
+PROD_VERSION := $(shell cat .VERSION)
+GIT_VERSION := $(shell printf %s-%d%s ${PROD_VERSION} ${COMMITS_COUNT} ${GIT_DIRTY})
 COVPATH=.coverage
 
 # SSH clones over the VPN get killed by some kind of DOS protection run amook
