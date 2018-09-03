@@ -11,13 +11,6 @@ of the aggregate coverage across the set of cover profiles results. In addition 
 provide a regex to exclude files from the calculation, and get a summary of the files with
 the least coverage.
 
-## Build
-
-If you want to manually build from source, clone the repo, and build with the standard go build tools.
-You'll also need the dependency from golang.org/x/tools/cover [or the internal mirror]
-
-`go install .`
-
 ## Usage
 
 `cov-report [-fmt txt|json|xml] [-o results.file] [-u <num top uncovered files>] [-ex source file name exclusion regex] [-cc combined output filename] <coverprofileFile> ...`
@@ -39,3 +32,46 @@ Top uncovered source files [name, uncovered count, total uncovered %]
  github.com/go-phorce/cov-report/version/current.go          1    0.5%
 
 ```
+
+## Contribution
+
+Before openning VSCODE or running make, run once:
+    ./vscode.sh
+
+* `make all` complete build and test
+* `make get` fetches the pinned dependencies from repos
+* `make devtools` get the dev tools for local development in VSCODE
+* `make build` build the executable tool
+* `make test` run the tests
+* `make testshort` runs the tests skipping the end-to-end tests and the code coverage reporting
+* `make covtest` runs the tests with end-to-end and the code coverage reporting
+* `make coverage` view the code coverage results from the last make test run.
+* `make generate` runs go generate to update any code generated files
+* `make fmt` runs go fmt on the project.
+* `make lint` runs the go linter on the project.
+
+run `make get` once, then run `make build` or `make test` as needed.
+
+First run:
+
+    make all
+
+Subsequent builds:
+
+    make build
+
+Tests:
+
+    make test
+
+Optionally run golang race detector with test targets by setting RACE flag:
+
+    make test RACE=true
+
+Review coverage report:
+
+    make covtest coverage
+
+### Current build status
+
+[![Build Status](https://travis-ci.org/go-phorce/cov-report.svg?branch=master)](https://travis-ci.org/go-phorce/cov-report)
