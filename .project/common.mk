@@ -1,8 +1,14 @@
 # common.mk: this contains commonly used helpers for makefiles.
-
-## Common variables
 SHELL=/bin/bash
 ROOT := $(shell pwd)
+
+## Project variables
+ORG_NAME=$(shell .project/var.sh project_org)
+PROJ_NAME=$(shell .project/var.sh project_name)
+REPO_NAME=${ORG_NAME}/${PROJ_NAME}
+PROJ_PACKAGE := ${REPO_NAME}
+
+## Common variables
 HOSTNAME := $(shell echo $$HOSTNAME)
 UNAME := $(shell uname)
 GITHUB_HOST := github.com
