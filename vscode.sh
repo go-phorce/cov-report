@@ -1,13 +1,19 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # this script creates PROJ_GOPATH folder for the project in GOPATH
 
 ROOT=`pwd`
 GOROOT=`go env GOROOT`
-echo "Root=$ROOT"
+echo "Working in $ROOT"
 
-ORG_NAME=github.com/go-phorce
-PROJ_NAME=cov-report
+# include parse_yaml function
+source .project/yaml.sh
+create_variables ./config.yml
+
+ORG_NAME=$project_org
+PROJ_NAME=$project_name
 REPO_NAME=$ORG_NAME/$PROJ_NAME
+
+echo "Repo: $REPO_NAME"
 
 if [[ "$PWD" = *src/$REPO_NAME ]]; then
 #
@@ -34,6 +40,8 @@ else
 #
 # Not in GOPATH format
 #
+echo "WARNING: this project is not cloned in GOPATH"
+
 pushd ..
 CWD=`pwd`
 PROJ_GOPATH_DIR=gopath
@@ -54,5 +62,5 @@ export PATH=$PATH:$PROJ_GOPATH/bin:$GOROOT/bin
 env | grep GO
 popd
 
-code  "$PROJ_GOPATH/src/$REPO_NAME" & make devtools
+code "$PROJ_GOPATH/src/$REPO_NAME" & make devtools
 fi
