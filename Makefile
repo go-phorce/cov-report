@@ -72,10 +72,6 @@ vars:
 
 all: clean gopath vendor tools generate build test
 
-jenkins: purge gopath vendor tools generate build citest cicoverage
-
-jenkinsint: purge gopath vendor tools generate build citestint
-
 clean:
 	go clean
 	rm -rf \
@@ -102,9 +98,10 @@ showupdates:
 gettools:
 	mkdir -p ${TOOLS_SRC}
 	$(call gitclone,${GITHUB_HOST},golang/tools,             ${TOOLS_SRC}/golang.org/x/tools,                  2226533658007779ffd629b495a088530c84dc50)
-	$(call gitclone,${GITHUB_HOST},golang/lint,              ${TOOLS_SRC}/github.com/golang/lint,              3ea3fa98a8104b2c8f8a7bffaebc7e54dddf99e1)
 	$(call gitclone,${GITHUB_HOST},jteeuwen/go-bindata,      ${TOOLS_SRC}/github.com/jteeuwen/go-bindata,      v3.0.7)
 	$(call gitclone,${GITHUB_HOST},jstemmer/go-junit-report, ${TOOLS_SRC}/github.com/jstemmer/go-junit-report, 385fac0ced9acaae6dc5b39144194008ded00697)
+	$(call gitclone,${GITHUB_HOST},golang/lint,              ${TOOLS_SRC}/github.com/golang/lint,              3ea3fa98a8104b2c8f8a7bffaebc7e54dddf99e1)
+	$(call gitclone,${GITHUB_HOST},golangci/golangci-lint,   ${TOOLS_SRC}/github.com/golangci/golangci-lint,   master)
 
 tools: gettools
 	GOPATH=${TOOLS_PATH} go install golang.org/x/tools/cmd/stringer
@@ -112,6 +109,7 @@ tools: gettools
 	GOPATH=${TOOLS_PATH} go install golang.org/x/tools/cmd/godoc
 	GOPATH=${TOOLS_PATH} go install golang.org/x/tools/cmd/guru
 	GOPATH=${TOOLS_PATH} go install github.com/golang/lint/golint
+	GOPATH=${TOOLS_PATH} go install github.com/golangci/golangci-lint/cmd/golangci-lint
 	GOPATH=${TOOLS_PATH} go install github.com/jteeuwen/go-bindata/...
 	GOPATH=${TOOLS_PATH} go install github.com/jstemmer/go-junit-report
 
