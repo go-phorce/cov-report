@@ -11,7 +11,14 @@ of the aggregate coverage across the set of cover profiles results. In addition 
 provide a regex to exclude files from the calculation, and get a summary of the files with
 the least coverage.
 
+## Dependencies
+
+    go get github.com/juju/errors
+    go get golang.org/x/tools
+
 ## Usage
+
+    go install github.com/go-phorce/cov-report/cmd/cov-report
 
 `cov-report [-fmt txt|json|xml] [-o results.file] [-u <num top uncovered files>] [-ex source file name exclusion regex] [-cc combined output filename] <coverprofileFile> ...`
 
