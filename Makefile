@@ -3,10 +3,6 @@ include ./.project/common.mk
 GOFILES = $(shell find . -type f -name '*.go')
 GOFILES_NOVENDOR = $(shell find . -type f -name '*.go' -not -path "./vendor/*" -not -path "./.tools/*" -not -path "./.gopath/*")
 
-# location for vendor files
-VENDOR_SRC=vendor
-DOCKER_BIN=.docker
-
 COVERAGE_EXCLUSIONS="/rt\.go|/bindata\.go"
 
 # flags
@@ -41,7 +37,7 @@ vars:
 	echo "VERSION=$(GIT_VERSION)"
 	[ -d "${PROJ_REPO_TARGET}" ] && echo "Link exists: ${PROJ_REPO_TARGET}" || echo "Link does not exist: ${PROJ_REPO_TARGET}"
 
-all: clean gopath vendor tools build test
+all: clean gopath tools build test
 
 clean:
 	go clean
@@ -107,13 +103,6 @@ devtools: getdevtools
 	go install github.com/acroca/go-symbols
 	go install github.com/ramya-rao-a/go-outline
 	go install github.com/sqs/goreturns
-
-get:
-	$(call gitclone,${GITHUB_HOST},stretchr/testify,      ${VENDOR_SRC}/github.com/stretchr/testify,    4d4bfba8f1d1027c4fdbe371823030df51419987)
-	$(call gitclone,${GITHUB_HOST},juju/errors,           ${VENDOR_SRC}/github.com/juju/errors,         c7d06af17c68cd34c835053720b21f6549d9b0ee)
-	$(call gitclone,${GITHUB_HOST},golang/tools,          ${GOPATH}/src/golang.org/x/tools,             master)
-
-vendor: get
 
 generate:
 	PATH=${TOOLS_BIN}:${PATH} go generate ./...
