@@ -3,6 +3,7 @@
 /.rpm
 /.tools
 bin/
+coverage.out
 
 .idea
 .tmp/
