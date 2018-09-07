@@ -1,9 +1,9 @@
 #!/bin/bash
 # this script creates PROJ_GOPATH folder for the project in GOPATH
 
-ROOT=`pwd`
+PROJ_ROOT=`pwd`
 GOROOT=`go env GOROOT`
-echo "Working in $ROOT"
+echo "Working in $PROJ_ROOT"
 
 # include parse_yaml function
 source .project/yaml.sh
@@ -26,7 +26,7 @@ PROJ_PACKAGE=$REPO_NAME
 PROJ_GOPATH=$CWD
 echo "PROJ_GOPATH=$PROJ_GOPATH"
 
-export PROJROOT=$ROOT
+export PROJ_DIR=$PROJ_ROOT
 export PROJ_GOPATH_DIR="$PROJ_GOPATH_DIR"
 export PROJ_GOPATH=$PROJ_GOPATH
 export GOPATH=$PROJ_GOPATH
@@ -53,7 +53,7 @@ echo "PROJ_GOPATH=$PROJ_GOPATH"
 mkdir -p "$PROJ_GOPATH_DIR/src/$ORG_NAME"
 ln -s ../../../../$PROJ_NAME "$PROJ_GOPATH_DIR/src/$REPO_NAME"
 
-export PROJROOT=$ROOT
+export PROJ_DIR=$PROJ_ROOT
 export PROJ_GOPATH_DIR="../$PROJ_GOPATH_DIR"
 export PROJ_GOPATH=$PROJ_GOPATH
 export GOPATH=$PROJ_GOPATH
