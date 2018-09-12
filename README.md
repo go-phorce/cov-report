@@ -2,6 +2,10 @@
 
 _Generates aggregate go code coverage results._
 
+[![Build Status](https://travis-ci.org/go-phorce/cov-report.svg?branch=master)](https://travis-ci.org/go-phorce/cov-report)
+[![Coverage Status](https://coveralls.io/repos/github/go-phorce/cov-report/badge.svg?branch=master)](https://coveralls.io/github/go-phorce/cov-report?branch=master)
+
+
 `go test` can generate code coverage results and an overall coverage percentage, however it can
 only do this one package at at time, also there are no mechanisms to exclude certain source
 files from the calculation (e.g. you may want to exclude code generated files).
@@ -78,7 +82,3 @@ Optionally run golang race detector with test targets by setting RACE flag:
 Review coverage report:
 
     make covtest coverage
-
-### Current build status
-
-[![Build Status](https://travis-ci.org/go-phorce/cov-report.svg?branch=master)](https://travis-ci.org/go-phorce/cov-report)
