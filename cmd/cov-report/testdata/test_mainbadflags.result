@@ -10,4 +10,5 @@ Usage of cov-report:
         Filename to write the results to (or stdout if not set)
   -u int
         Number of top uncovered files to list (default 10)
+  -v    Print version
 cov-report: flag provided but not defined: -foo
