@@ -41,17 +41,12 @@ Top uncovered source files [name, uncovered count, total uncovered %]
  github.com/go-phorce/cov-report/cmd/cov-report/main.go     19    9.4%
  github.com/go-phorce/cov-report/version/versioninfo.go      1    0.5%
  github.com/go-phorce/cov-report/version/current.go          1    0.5%
-
 ```
 
 ## Contribution
 
-Before openning VSCODE or running make, run once:
-    ./vscode.sh
-
 * `make all` complete build and test
 * `make get` fetches the pinned dependencies from repos
-* `make devtools` get the dev tools for local development in VSCODE
 * `make build` build the executable tool
 * `make test` run the tests
 * `make testshort` runs the tests skipping the end-to-end tests and the code coverage reporting
