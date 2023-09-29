@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -37,35 +37,36 @@ var testResult = &coverageResult{
 	Result:          85.33,
 	ResultFormatted: `85.33%`,
 	TopUncovered: []fileResult{
-		{Filename: "bob.go", Total: 100, Covered: 10, Uncovered: 90, CoveredPct: 10.0},
+		{Filename: "bob.go", Total: 100, Covered: 10, Uncovered: 90, CoveredPct: 10.0, UncoveredPct: 90.0},
 	},
 }
 
-func loadResult(t *testing.T) string {
+func loadResult(t *testing.T) (string, string) {
 	f := filepath.Join("testdata", strings.ToLower(t.Name())) + ".result"
-	res, err := ioutil.ReadFile(f)
+	res, err := os.ReadFile(f)
 	require.NoError(t, err)
-	return string(res)
+	return string(res), f
 }
 
-func verifyFormatter(t *testing.T, fName string, verifier func(exp, act string)) {
+func verifyFormatter(t *testing.T, fName string, verifier func(exp, act, msg string)) {
 	b := bytes.Buffer{}
 	formatters[fName](&b, testResult)
-	verifier(loadResult(t), b.String())
+	res, fn := loadResult(t)
+	verifier(res, b.String(), fn)
 }
 
 func TestFormatters_JSON(t *testing.T) {
-	verifyFormatter(t, "json", func(exp, act string) { assert.JSONEq(t, exp, act) })
+	verifyFormatter(t, "json", func(exp, act, msg string) { assert.JSONEq(t, exp, act, msg) })
 }
 
 func TestFormatters_XML(t *testing.T) {
-	verifyFormatter(t, "xml", func(exp, act string) { assert.Equal(t, exp, act) })
+	verifyFormatter(t, "xml", func(exp, act, msg string) { assert.Equal(t, exp, act, msg) })
 }
 
 func TestFormatters_DS(t *testing.T) {
-	verifyFormatter(t, "ds", func(exp, act string) { assert.Equal(t, exp, act) })
+	verifyFormatter(t, "ds", func(exp, act, msg string) { assert.Equal(t, exp, act, msg) })
 }
 
 func TestFormatters_Txt(t *testing.T) {
-	verifyFormatter(t, "txt", func(exp, act string) { assert.Equal(t, exp, act) })
+	verifyFormatter(t, "txt", func(exp, act, msg string) { assert.Equal(t, exp, act, msg) })
 }

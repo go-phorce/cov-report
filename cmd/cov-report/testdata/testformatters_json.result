@@ -7,6 +7,6 @@
     "result":           85.33,
     "resultFormatted" : "85.33%",
     "topUncoveredFiles": [
-        {"filename":"bob.go", "total":100, "covered":10, "uncovered":90, "coveredPercent":10}
+        {"filename":"bob.go", "total":100, "covered":10, "uncovered":90, "coveredPercent":10, "uncoveredPercent": 90}
     ]
 }

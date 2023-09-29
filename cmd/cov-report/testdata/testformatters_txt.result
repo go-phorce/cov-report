@@ -5,5 +5,5 @@ uncovered: 181
 excluded:  codegenc.go
 result:    85.33%
 
-Top uncovered source files [name, uncovered count, total uncovered %]
- bob.go     90    7.3%
+Top uncovered source files [name, covered %, uncovered count, total uncovered %]
+ bob.go  10.0%    90   90.0%

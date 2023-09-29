@@ -10,7 +10,8 @@
     <Filename>bob.go</Filename>
     <Total>100</Total>
     <Covered>10</Covered>
-    <Uncovered>90</Uncovered>
     <CoveredPct>10</CoveredPct>
+    <Uncovered>90</Uncovered>
+    <UncoveredPct>90</UncoveredPct>
   </TopUncovered>
 </CoverageResult>

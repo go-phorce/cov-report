@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/go-phorce/cov-report/version"
+	"github.com/effective-security/cov-report/version"
 	"golang.org/x/tools/cover"
 )
 

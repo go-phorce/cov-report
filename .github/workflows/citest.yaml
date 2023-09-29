@@ -1,0 +1,111 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+      - release-*
+    tags:
+      - "v*"
+  pull_request:
+
+env:
+  EVENT_NUMBER: ${{ github.event.number }}
+  COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+  MIN_TESTCOV: 72
+  # A unique number for each workflow run within a repository.
+  # This number does not change if you re-run the workflow run.
+  RUN_ID: ${{ github.run_id }}
+  # A unique number for each run of a particular workflow in a repository.
+  # This number begins at 1 for the workflow's first run, and increments with each new run.
+  # This number does not change if you re-run the workflow run.
+  RUN_NUMBER: ${{ github.run_number }}
+  # A unique number for each attempt of a particular workflow run in a repository.
+  # This number begins at 1 for the workflow run's first attempt, and increments with each re-run.
+  RUN_ATTEMPT: ${{ github.run_attempt }}
+  PULL_NUMBER: ${{ github.event.pull_request.number }}
+  # NOTE(epk) this identifier is used to easily bust a pre-existing go
+  # mod/build cache. To do so simply increment this number.
+  GO_CACHE_BUSTER: 1
+
+jobs:
+  Test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create code coverage status for the current commit
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "User ${GIT_USER}, ${GITHUB_REPOSITORY}, ${COMMIT_SHA}"
+          curl "https://${GIT_USER}:${GIT_TOKEN}@api.github.com/repos/${GITHUB_REPOSITORY}/statuses/${COMMIT_SHA}" -d "{\"state\": \"pending\",\"target_url\": \"https://github.com/${GITHUB_REPOSITORY}/pull/${PULL_NUMBER}/checks?check_run_id=${RUN_ID}\",\"description\": \"in progress — This check has started... \",\"context\": \"code cov\"}"
+        env:
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_USER: ${{ github.actor }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        # with:
+        #   fetch-depth: 0
+        #   submodules: true
+      - name: Fetch History
+        run: git fetch --prune --unshallow
+
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+      - name: Find Go cache locations
+        id: go-cache-paths
+        shell: bash
+        run: |
+          echo "go-build=$(go env GOCACHE)" >> $GITHUB_OUTPUT
+          echo "go-mod=$(go env GOMODCACHE)" >> $GITHUB_OUTPUT
+
+      # Cache go build cache, used to speedup go test
+      - name: Go Build Cache
+        id: go-build-cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.go-cache-paths.outputs.go-build }}
+          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}-${{ env.GO_CACHE_BUSTER }}
+          restore-keys: ${{ runner.os }}-go-build-
+
+      # Cache go mod cache, used to speedup builds
+      - name: Go Mod Cache
+        id: go-mod-cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.go-cache-paths.outputs.go-mod }}
+          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}-${{ env.GO_CACHE_BUSTER }}
+          restore-keys: ${{ runner.os }}-go-mod-${{ inputs.cache-key-suffix }}
+
+      - name: Go Artifacts
+        if: steps.go-mod-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          go mod download
+          go mod tidy
+
+      - name: Go tools
+        if: steps.go-build-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          make tools build
+
+      - name: CovTest
+        run: |
+          make covtest
+
+      - name: Report CovTest
+        if: github.event_name == 'pull_request'
+        run: |
+          set -x
+          total=`go tool cover -func=coverage.out | grep total | grep -Eo '[0-9]+\.[0-9]+'`
+          echo "${GIT_USER}: total cov: $total"
+          (( $(echo "$total > ${MIN_TESTCOV}" | bc -l) )) && STATE=success || STATE=failure
+          curl "https://${GIT_USER}:${GIT_TOKEN}@api.github.com/repos/${GITHUB_REPOSITORY}/statuses/${COMMIT_SHA}" -d "{\"state\": \"${STATE}\",\"target_url\": \"https://github.com/${GITHUB_REPOSITORY}/pull/${PULL_NUMBER}/checks?check_run_id=${RUN_ID}\",\"description\": \"${total}%\",\"context\": \"code cov\"}"
+        env:
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_USER: ${{ github.actor }}
+
+      - name: Lint
+        run: make fmt-check lint

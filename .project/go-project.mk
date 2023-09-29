@@ -1,4 +1,4 @@
-# go-project.mk: this contains commonly used helpers for makefiles.
+# gomod-project.mk: this contains commonly used helpers for makefiles.
 SHELL=/bin/bash
 
 # Used envaronment variables:
@@ -20,9 +20,6 @@ SHELL=/bin/bash
 #
 #	PROJ_GOFILES
 #		List of all .go files in the project, exluding vendor and tools
-#
-#	REL_PATH_TO_GOPATH
-#		Relative path from repo to GOPATH
 #
 # Test flags:
 #
@@ -51,7 +48,6 @@ ORG_NAME := $(shell .project/config_var.sh project_org)
 PROJ_NAME := $(shell .project/config_var.sh project_name)
 REPO_NAME := ${ORG_NAME}/${PROJ_NAME}
 PROJ_PACKAGE := ${REPO_NAME}
-REL_PATH_TO_GOPATH := $(shell .project/rel_gopath.sh)
 
 ## Common variables
 HOSTNAME := $(shell echo $$HOSTNAME)
@@ -70,38 +66,17 @@ COVPATH=.coverage
 
 # List of all .go files in the project, excluding vendor and .tools
 GOFILES_NOVENDOR = $(shell find . -type f -name '*.go' -not -path "./vendor/*" -not -path "./.tools/*" -not -path "./.gopath/*")
+GOPACKAGES = $(shell go list ./...)
 
 export PROJ_DIR=$(PROJ_ROOT)
 export PROJ_BIN=$(PROJ_ROOT)/bin
-export VENDOR_SRC=$(PROJ_ROOT)/vendor
-
-# if PROJ_GOPATH is defined,
-# then GOPATH and GOPROJ_DIR are expected to be set, and symbolic link to the project must be created;
-# otherwise create necessary environment
-ifndef PROJ_GOPATH
-export PROJ_GOPATH_DIR=.gopath
-export PROJ_GOPATH := ${PROJ_DIR}/${PROJ_GOPATH_DIR}
-export GOPATH := ${PROJ_GOPATH}
-export GOPROJ_DIR := $(shell go env GOPROJ_DIR)
-export PATH := ${PATH}:${GOPATH}/bin:${GOPROJ_DIR}/bin
-endif
-
-# tools path
-export TOOLS_PATH := ${PROJ_DIR}/.tools
-export TOOLS_SRC := ${TOOLS_PATH}/src
-export TOOLS_BIN := ${TOOLS_PATH}/bin
-export PATH := ${PATH}:${TOOLS_BIN}
-
-PROJ_REPO_TARGET := "${PROJ_GOPATH_DIR}/src/${REPO_NAME}"
-
-# test path
-TEST_GOPATH := "${PROJ_GOPATH}"
-TEST_DIR := "${PROJ_REPO_TARGET}"
+export GOBIN=$(PROJ_ROOT)/bin
+export PATH := ${PATH}:${PROJ_BIN}
 
 # List of all .go files in the project, exluding vendor and tools
 PROJ_GOFILES = $(shell find . -type f -name '*.go' -not -path "./vendor/*" -not -path "./.gopath/*" -not -path "./.tools/*")
 
-COVERAGE_EXCLUSIONS="/rt\.go|/bindata\.go"
+COVERAGE_EXCLUSIONS="/rt\.go|/bindata\.go|_test\.go|_mock\.go|main\.go"
 
 # flags
 INTEGRATION_TAG="integration"
@@ -115,46 +90,6 @@ ifeq ($(RACE),true)
 	TEST_RACEFLAG = -race
 endif
 
-# SSH clones over the VPN get killed by some kind of DOS protection run amook
-# set clone_delay to add a delay between each git clone/fetch to work around that
-# e.g. CLONE_DELAY=1 make all
-# the default is no delayWorking on $(PROJ_PACKAGE) in
-CLONE_DELAY ?= 0
-
-# this prints out the git log between the checked out version and origin/master for all the git repos in the supplied tree
-#
-# the find cmd finds all the git repos by looking for .git diretories
-# the [[ $$(git log) ... ]] at the start the script checks to see if there are any log entries, it only does the rest
-# of the command if there are some
-# it runs git log in the relevant directory to show the log entries betweeen HEAD and origin/master
-define show_dep_updates
-	find $(1) -name .git -exec sh -c 'cd {}/.. && [ $$(git log --oneline HEAD...origin/master | wc -l) -gt 0 ] && echo "\n" && pwd && git --no-pager log --pretty=oneline --abbrev=0 --graph HEAD...origin/master' \;
-endef
-
-# httpsclone is a function that will do a clone, or a fetch / checkout [if we'd previous done a clone]
-# usage, $(call httpsclone,github.com,ekspand/foo,/some/directory,some_sha)
-# it builds a repo url from the first 2 params, the 3rd param is the directory to place the repo
-# and the final param is the commit to checkout [a sha or branch or tag]
-define httpsclone
-	@echo "Checking/Updating dependency https://$(1)/$(2)"
-	@if [ -d $(3) ]; then cd $(3) && git fetch origin; fi			# update from remote if we've already cloned it
-	@if [ ! -d $(3) ]; then git clone -q -n https://$(1)/$(2) $(3); fi  # clone a new copy
-	@cd $(3) && git checkout -q $(4)								# checkout out specific commit
-	@sleep ${CLONE_DELAY}
-endef
-
-# gitclone is a function that will do a clone, or a fetch / checkout [if we'd previous done a clone]
-# usage, $(call gitclone,github.com,ekspand/foo,/some/directory,some_sha)
-# it builds a repo url from the first 2 params, the 3rd param is the directory to place the repo
-# and the final param is the commit to checkout [a sha or branch or tag]
-define gitclone
-	@echo "Checking/Updating dependency git@$(1):$(2).git"
-	@if [ -d $(3) ]; then cd $(3) && git fetch origin; fi			# update from remote if we've already cloned it
-	@if [ ! -d $(3) ]; then git clone -q -n git@$(1):$(2).git $(3); fi  # clone a new copy
-	@cd $(3) && git checkout -q $(4)								# checkout out specific commit
-	@sleep ${CLONE_DELAY}
-endef
-
 ## Common targets/functions for golang projects
 # 	They assume that
 #	a) GOPATH has been set with an export GOPATH somewhere
@@ -165,7 +100,7 @@ endef
 # to ./${COVPATH}
 # the 5 params are
 #		1) the working dir to run the tests in
-#		2) the GOPATH to run the tests with
+#		2) the flags to run the tests with
 #		3) flag to enable race detector
 #		4) options to race detector such as log_path for storing the results of the race detector
 #		5) the name of the PROJ_DIR package to test
@@ -175,10 +110,11 @@ endef
 #
 define go_test_cover
 	echo  "Testing in $(1)"
+	rm -rf ${COVPATH}
 	mkdir -p ${COVPATH}/race
 	exitCode=0 \
-	&& cd ${1} && go list $(5)/... | ( while read -r pkg; do \
-		result=`GOPATH=$(2) GORACE=$(4) go test $$pkg -coverpkg=$(5)/... -covermode=count $(3) \
+	&& cd $(1) && go list $(5)/... | ( while read -r pkg; do \
+		result=`GORACE=$(4) go test -p 40 $(2) $$pkg -coverpkg=$(5)/... -covermode=count $(3) \
 			-coverprofile=${COVPATH}/cc_$$(echo $$pkg | tr "/" "_").out \
 			2>&1 | grep --invert-match "warning: no packages"` \
 			&& test_result=`echo "$$result" | tail -1` \
@@ -197,9 +133,10 @@ endef
 # assuming ${TOOLS_BIN} contains go-junit-report & cov-report
 define go_test_cover_junit
 	echo  "Testing in $(1)"
+	rm -rf ${COVPATH}
 	mkdir -p ${COVPATH}/race
 	set -o pipefail; failure=0; while read -r pkg; do \
-		cd $(1) && GOPATH=$(2) GORACE=$(4) go test -v $$pkg -coverpkg=$(5)/... -covermode=count $(3) \
+		cd $(1) && GORACE=$(4) go test $(2) -v $$pkg -coverpkg=$(5)/... -covermode=count $(3) \
 			-coverprofile=${COVPATH}/cc_$$(echo $$pkg | tr "/" "_").out \
 			>> ${COVPATH}/citest_$$(echo $(5) | tr "/" "_").log \
 			|| failure=1; \
@@ -218,149 +155,104 @@ list:
 # print environment variables
 #
 vars:
-	[ -d "${PROJ_REPO_TARGET}" ] && echo "Repo target exists: ${PROJ_REPO_TARGET}" || echo "Symbolic link does not exist: ${PROJ_REPO_TARGET}"
+	echo "PATH=$(PATH)"
 	echo "PROJ_DIR=$(PROJ_DIR)"
 	echo "PROJ_REPO_TARGET=$(PROJ_REPO_TARGET)"
 	echo "GOROOT=$(GOROOT)"
+	echo "GOBIN=$(GOBIN)"
 	echo "GOPATH=$(GOPATH)"
-	echo "PROJ_REPO_TARGET=$(PROJ_REPO_TARGET)"
 	echo "PROJ_PACKAGE=$(PROJ_PACKAGE)"
-	echo "PROJ_GOPATH=$(PROJ_GOPATH)"
 	echo "TOOLS_PATH=$(TOOLS_PATH)"
-	echo "TEST_GOPATH=$(TEST_GOPATH)"
-	echo "TEST_DIR=$(TEST_DIR)"
 	echo "GIT_VERSION=$(GIT_VERSION)"
 	go version
-
-#
-# clean produced files
-#
-clean:
-	go clean
-	rm -rf \
-		${COVPATH} \
-		${PROJ_BIN}
-
-#
-# clean and purge tools and vendor
-#
-purge: clean
-	rm -rf \
-		${TOOLS_PATH} \
-		${VENDOR_SRC}
-
-#
-# create a symbolic link to project's PROJ_GOPATH,
-# if it's not cloned in GOPATH.
-#
-gopath:
-	@[ ! -d $(PROJ_REPO_TARGET) ] && \
-		rm -f "${PROJ_REPO_TARGET}" && \
-		mkdir -p "${PROJ_GOPATH_DIR}/src/${ORG_NAME}" && \
-		ln -s ${REL_PATH_TO_GOPATH} "${PROJ_REPO_TARGET}" && \
-		echo "Created symbolic link: ${PROJ_REPO_TARGET} => ${REL_PATH_TO_GOPATH}" || \
-	echo "Repo target exists: ${PROJ_REPO_TARGET} => ${REL_PATH_TO_GOPATH}"
-
-#
-# show updates in Tools and vendor folder.
-#
-showupdates:
-	@$(call show_dep_updates,${TOOLS_SRC})
-	@$(call show_dep_updates,${VENDOR_SRC})
 
 #
 # list packages
 #
 lspkg:
-	cd ${TEST_DIR} && go list ./...
+	go list ./...
 
 #
 # print out GO environment
 #
 env:
-	GOPATH=${GOPATH} go env
-
-#
-# print out GO test environment
-#
-testenv:
-	GOPATH=${TEST_GOPATH} go env
+	go env
 
 #
 # GO test with bench
 #
 bench:
-	GOPATH=${TEST_GOPATH} go test  ${TEST_RACEFLAG} -bench . ${PROJ_PACKAGE}/...
+	go test  ${TEST_RACEFLAG} -bench . ${PROJ_PACKAGE}/...
 
 generate:
-	PATH=${TOOLS_BIN}:${PATH} go generate ./...
+	go generate ./...
+	gofmt -s -l -w -r 'interface{} -> any' .
 
 fmt:
 	echo "Running Fmt"
-	gofmt -s -l -w ${GOFILES_NOVENDOR}
+	gofmt -s -l -w -r 'interface{} -> any' .
 
-vet: build
+fmt-check:
+	echo "Running Fmt check"
+	gofmt -d -l -r 'interface{} -> any' .
+	@test -z "$(shell gofmt -l -r 'interface{} -> any' . | tee /dev/stderr)"
+
+vet:
 	echo "Running vet"
-	cd ${TEST_DIR} && go vet ./...
+	go vet ${BUILD_FLAGS} ${PROJ_PACKAGE}/...
 
-lint:
+lint: fmt vet
 	echo "Running lint"
-	cd ${TEST_DIR} && GOPATH=${TEST_GOPATH}  go list ./... | grep -v /vendor/ | xargs -L1 golint -set_exit_status
+	golangci-lint run --timeout 20m0s ./...
 
-test: fmt vet lint
+test:
 	echo "Running test"
-	cd ${TEST_DIR} && go test ${TEST_RACEFLAG} ./...
+	go test ${TEST_FLAGS} ${TEST_RACEFLAG} ${PROJ_PACKAGE}/...
 
 testshort:
 	echo "Running testshort"
-	cd ${TEST_DIR} && go test ${TEST_RACEFLAG} ./... --test.short
+	go test ${TEST_FLAGS} ${TEST_RACEFLAG} ./... --test.short
 
 # you can run a subset of tests with make sometests testname=<testnameRegex>
 sometests:
-	cd ${TEST_DIR} && go test ${TEST_RACEFLAG} ./... --test.short -run $(testname)
+	go test ${TEST_FLAGS} ${TEST_RACEFLAG} ./... --test.short -run $(testname)
 
-covtest: fmt vet lint
+covtest: fmt vet
 	echo "Running covtest"
-	$(call go_test_cover,${TEST_DIR},${TEST_GOPATH},${TEST_RACEFLAG},${TEST_GORACEOPTIONS},.,${COVERAGE_EXCLUSIONS})
+	$(call go_test_cover,${PROJ_DIR},${BUILD_FLAGS},${TEST_RACEFLAG},${TEST_GORACEOPTIONS},.,${COVERAGE_EXCLUSIONS})
 
 # Runs integration tests as well
 testint: fmt vet lint
 	echo "Running testint"
-	GOPATH=${TEST_GOPATH} go test ${TEST_RACEFLAG} -tags=${INTEGRATION_TAG} ${PROJ_PACKAGE}/...
+	go test ${TEST_RACEFLAG} -tags=${INTEGRATION_TAG} ${PROJ_PACKAGE}/...
 
 # shows the coverages results assuming they were already generated by a call to go_test_cover
 coverage:
 	echo "Running coverage"
-	GOPATH=${TEST_GOPATH} go tool cover -html=${COVPATH}/combined.out
+	go tool cover -html="${COVPATH}/combined.out"
 
 # generates a HTML based code coverage report, and writes it to a file in the results directory
 # assumes you've run go_test_cover (or go_test_cover_junit)
 cicoverage:
 	echo "Running cicoverage"
 	mkdir -p ${COVPATH}/cover
-	GOPATH=${TEST_GOPATH} go tool cover -html=${COVPATH}/combined.out -o ${COVPATH}/cover/coverage.html
+	go tool cover -html="${COVPATH}/combined.out" -o "${COVPATH}/cover/coverage.html"
 
 # as Jenkins runs citestint as well which will run all unit tests + integration tests with code coverage
 # this unitest step can skip coverage reporting which speeds it up massively
 citest: vet lint
 	echo "Running citest"
-	$(call go_test_cover_junit,${TEST_DIR},${GOPATH},${TEST_RACEFLAG},${TEST_GORACEOPTIONS},.,${COVERAGE_EXCLUSIONS})
+	$(call go_test_cover_junit,${PROJ_DIR},${BUILD_FLAGS},${TEST_RACEFLAG},${TEST_GORACEOPTIONS},.,${COVERAGE_EXCLUSIONS})
 	cov-report -fmt xml -o ${COVPATH}/coverage.xml -ex ${COVERAGE_EXCLUSIONS} -cc ${COVPATH}/combined.out ${COVPATH}/cc*.out
 	cov-report -fmt ds -o ${COVPATH}/summary.xml -ex ${COVERAGE_EXCLUSIONS} ${COVPATH}/cc*.out
 
-coveralls: covtest
+coveralls:
 	echo "Running coveralls"
 	goveralls -v -coverprofile=coverage.out -service=travis-ci -package ./...
 
 help:
 	echo "make vars - print make variables"
-	echo "make upgrade-project.mk - upgrade project.mk files"
 	echo "make env - pring GO environment"
-	echo "make testenv - pring GO test environment"
-	echo "make clean - clean produced files"
-	echo "make purge - clean and purge .tools and vendor folders"
-	echo "make gopath - create a symbolic link to project's PROJ_GOPATH, if it's not cloned in GOPATH."
-	echo "make showupdates - show updates in .tools and vendor folders"
 	echo "make lspkg - list GO packeges in the current project"
 	echo "make generate - generate GO files"
 	echo "make bench - GO test with bench"
@@ -372,37 +264,3 @@ help:
 	echo "make covtest - run test with coverage report"
 	echo "make coverage - open coverage report"
 	echo "make coveralls - publish coverage to coveralls"
-	echo "make devtools - install dev tools"
-
-getdevtools:
-	$(call httpsclone,${GITHUB_HOST},golang/tools,           ${TOOLS_PATH}/src/golang.org/x/tools,                  release-branch.go1.11)
-	$(call httpsclone,${GITHUB_HOST},golang/dep,             ${TOOLS_PATH}/src/github.com/golang/dep,               master)
-	$(call httpsclone,${GITHUB_HOST},derekparker/delve,      ${TOOLS_PATH}/src/github.com/derekparker/delve,        master)
-	$(call httpsclone,${GITHUB_HOST},uudashr/gopkgs,         ${TOOLS_PATH}/src/github.com/uudashr/gopkgs,           master)
-	$(call httpsclone,${GITHUB_HOST},nsf/gocode,             ${TOOLS_PATH}/src/github.com/nsf/gocode,               master)
-	$(call httpsclone,${GITHUB_HOST},rogpeppe/godef,         ${TOOLS_PATH}/src/github.com/rogpeppe/godef,           master)
-	$(call httpsclone,${GITHUB_HOST},acroca/go-symbols,      ${TOOLS_PATH}/src/github.com/acroca/go-symbols,        master)
-	$(call httpsclone,${GITHUB_HOST},ramya-rao-a/go-outline, ${TOOLS_PATH}/src/github.com/ramya-rao-a/go-outline,   master)
-	$(call httpsclone,${GITHUB_HOST},ddollar/foreman,        ${TOOLS_PATH}/src/github.com/ddollar/foreman,          master)
-	$(call httpsclone,${GITHUB_HOST},sqs/goreturns,          ${TOOLS_PATH}/src/github.com/sqs/goreturns,            master)
-	$(call httpsclone,${GITHUB_HOST},karrick/godirwalk,      ${TOOLS_PATH}/src/github.com/karrick/godirwalk,        master)
-	$(call httpsclone,${GITHUB_HOST},pkg/errors,             ${TOOLS_PATH}/src/github.com/pkg/errors,               master)
-
-devtools: getdevtools
-	GOPATH=${TOOLS_PATH} go install golang.org/x/tools/go/buildutil
-	GOPATH=${TOOLS_PATH} go install golang.org/x/tools/cmd/fiximports
-	GOPATH=${TOOLS_PATH} go install golang.org/x/tools/cmd/goimports
-	GOPATH=${TOOLS_PATH} go install github.com/golang/dep/cmd/dep
-	GOPATH=${TOOLS_PATH} go install github.com/derekparker/delve/cmd/dlv
-	GOPATH=${TOOLS_PATH} go install github.com/uudashr/gopkgs/cmd/gopkgs
-	GOPATH=${TOOLS_PATH} go install github.com/nsf/gocode
-	GOPATH=${TOOLS_PATH} go install github.com/rogpeppe/godef
-	GOPATH=${TOOLS_PATH} go install github.com/acroca/go-symbols
-	GOPATH=${TOOLS_PATH} go install github.com/ramya-rao-a/go-outline
-	GOPATH=${TOOLS_PATH} go install github.com/sqs/goreturns
-
-upgrade-project.mk:
-	wget -O vscode.sh https://raw.githubusercontent.com/go-phorce/go-makefile/master/vscode.sh
-	wget -O .project/go-project.mk https://raw.githubusercontent.com/go-phorce/go-makefile/master/.project/go-project.mk
-	wget -O .project/rel_gopath.sh https://raw.githubusercontent.com/go-phorce/go-makefile/master/.project/rel_gopath.sh
-	wget -O .project/config-softhsm.sh https://raw.githubusercontent.com/go-phorce/go-makefile/master/.project/config-softhsm.sh
