@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -69,8 +68,9 @@ func verifyMain(t *testing.T, expResultCode int, args ...string) {
 	res := realMain(&nopWriteCloser{&out}, fullArgs)
 	assert.Equal(t, expResultCode, res)
 
-	exp := loadResult(t)
-	assert.Equal(t, strings.Replace(exp, "\t", "    ", -1), strings.Replace(out.String(), "\t", "    ", -1))
+	exp, fn := loadResult(t)
+	str := out.String()
+	assert.Equal(t, strings.Replace(exp, "\t", "    ", -1), strings.Replace(str, "\t", "    ", -1), fn)
 }
 
 type nopWriteCloser struct {
@@ -88,11 +88,12 @@ func (n *nopWriteCloser) Close() error {
 func Test_CoverageAccumulator(t *testing.T) {
 	a := newCoverageAccumulator()
 	for _, f := range []string{"cp1.out", "cp2.out", "cp3.out"} {
-		a.parse(filepath.Join("testdata", f), nil)
+		err := a.parse(filepath.Join("testdata", f), nil)
+		assert.NoError(t, err)
 	}
 	a.calculate()
 
-	tf, err := ioutil.TempFile("", t.Name())
+	tf, err := os.CreateTemp("", t.Name())
 	require.NoError(t, err)
 	defer os.Remove(tf.Name())
 
@@ -100,16 +101,16 @@ func Test_CoverageAccumulator(t *testing.T) {
 	assertTextFileEqual(t, "testdata/test_coverageaccumulater_cp.result", tf.Name())
 
 	r := a.result(1)
-	exp := loadResult(t)
+	exp, fn := loadResult(t)
 	b := bytes.Buffer{}
 	formatters["json"](&b, r)
-	assert.JSONEq(t, exp, b.String())
+	assert.JSONEq(t, exp, b.String(), fn)
 }
 
 func assertTextFileEqual(t *testing.T, exp, act string) {
-	e, err := ioutil.ReadFile(exp)
+	e, err := os.ReadFile(exp)
 	require.NoError(t, err)
-	a, err := ioutil.ReadFile(act)
+	a, err := os.ReadFile(act)
 	require.NoError(t, err)
 	elines := strings.Split(string(e), "\n")
 	alines := strings.Split(string(a), "\n")

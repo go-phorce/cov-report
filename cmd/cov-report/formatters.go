@@ -41,14 +41,14 @@ func dsFormatter(w io.Writer, cr *coverageResult) {
 		if color != "" {
 			attr = append(attr, xml.Attr{Name: n("fontcolor"), Value: color})
 		}
-		x.EncodeToken(xml.StartElement{Name: n("td"), Attr: attr})
-		x.EncodeToken(xml.EndElement{Name: n("td")})
+		_ = x.EncodeToken(xml.StartElement{Name: n("td"), Attr: attr})
+		_ = x.EncodeToken(xml.EndElement{Name: n("td")})
 	}
 	tr := func() {
-		x.EncodeToken(xml.StartElement{Name: n("tr")})
+		_ = x.EncodeToken(xml.StartElement{Name: n("tr")})
 	}
 	endtr := func() {
-		x.EncodeToken(xml.EndElement{Name: n("tr")})
+		_ = x.EncodeToken(xml.EndElement{Name: n("tr")})
 	}
 	rowColor := func(label, val, color string) {
 		tr()
@@ -63,24 +63,24 @@ func dsFormatter(w io.Writer, cr *coverageResult) {
 		}
 		endtr()
 	}
-	x.EncodeToken(xml.StartElement{Name: n("section"), Attr: []xml.Attr{
+	_ = x.EncodeToken(xml.StartElement{Name: n("section"), Attr: []xml.Attr{
 		{Name: n("title"), Value: "Code Coverage"},
 	}})
-	x.EncodeToken(xml.StartElement{Name: n("table")})
+	_ = x.EncodeToken(xml.StartElement{Name: n("table")})
 	rowColor("Total Coverage", cr.ResultFormatted, colorOf(cr.Result))
 	rowColor("Total Statements", fmt.Sprintf("%d", cr.Total), "black")
 	rowColor("Covered Statements", fmt.Sprintf("%d", cr.Covered), "black")
-	x.EncodeToken(xml.EndElement{Name: n("table")})
+	_ = x.EncodeToken(xml.EndElement{Name: n("table")})
 
 	if len(cr.TopUncovered) > 0 {
-		x.EncodeToken(xml.StartElement{Name: n("table")})
+		_ = x.EncodeToken(xml.StartElement{Name: n("table")})
 		rowN("Filename", "Uncovered Stmts", `% Uncovered [of Total]`)
 		for _, fr := range cr.TopUncovered {
 			rowN(fr.Filename, strconv.Itoa(fr.Uncovered), fmt.Sprintf("%.1f%%", 100*float32(fr.Uncovered)/float32(cr.Total)))
 		}
-		x.EncodeToken(xml.EndElement{Name: n("table")})
+		_ = x.EncodeToken(xml.EndElement{Name: n("table")})
 	}
-	x.EncodeToken(xml.EndElement{Name: n("section")})
+	_ = x.EncodeToken(xml.EndElement{Name: n("section")})
 	x.Flush()
 }
 
@@ -98,20 +98,25 @@ func txtFormatter(w io.Writer, r *coverageResult) {
 	fmt.Fprintf(w, "Statements\ntotal:     %d\ncovered:   %d\nuncovered: %d\nexcluded:  %v\nresult:    %v\n",
 		r.Total, r.Covered, r.Uncovered, strings.Join(r.ExcludedSources, ","), r.ResultFormatted)
 	if len(r.TopUncovered) > 0 {
-		fmt.Fprintf(w, "\nTop uncovered source files [name, uncovered count, total uncovered %%]\n")
+		fmt.Fprintf(w, "\nTop uncovered source files [name, covered %%, uncovered count, total uncovered %%]\n")
 		longestFilename := longestFilename(r.TopUncovered)
 		for _, fr := range r.TopUncovered {
-			fmt.Fprintf(w, " %s%s  %5d   %4.1f%%\n", fr.Filename, strings.Repeat(" ", longestFilename-len(fr.Filename)), fr.Uncovered, 100*float32(fr.Uncovered)/float32(r.Total))
+			fmt.Fprintf(w, " %s%s  %4.1f%% %5d   %4.1f%%\n",
+				fr.Filename,
+				strings.Repeat(" ", longestFilename-len(fr.Filename)),
+				fr.CoveredPct,
+				fr.Uncovered,
+				fr.UncoveredPct)
 		}
 	}
 }
 
 func jsonFormatter(w io.Writer, r *coverageResult) {
 	d, _ := json.MarshalIndent(r, "", "  ")
-	w.Write(d)
+	_, _ = w.Write(d)
 }
 
 func xmlFormatter(w io.Writer, r *coverageResult) {
 	d, _ := xml.MarshalIndent(r, "", "  ")
-	w.Write(d)
+	_, _ = w.Write(d)
 }
